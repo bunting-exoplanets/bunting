@@ -37,10 +37,13 @@ st.markdown("""
         justify-content: center;
         width: 100%;
     }
-    .google-button {
-        display: flex;
-        justify-content: center;
+    /* --- FIX FOR GOOGLE BUTTON CENTERING --- */
+    .stHtml, .stHtml > div {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100%;
     }
+    /* ------------------------------------- */
     h3, h4 {
         font-weight: bold;
         text-align: center;
@@ -238,7 +241,7 @@ if st.session_state.token is None:
 
         CLIENT_ID = st.secrets.get("GOOGLE_CLIENT_ID", os.environ.get("GOOGLE_CLIENT_ID"))
         CLIENT_SECRET = st.secrets.get("GOOGLE_CLIENT_SECRET", os.environ.get("GOOGLE_CLIENT_SECRET"))
-        REDIRECT_URI = "http://localhost:8501"
+        REDIRECT_URI = "https://bunting.streamlit.app/"
 
         if CLIENT_ID == "YOUR_GOOGLE_CLIENT_ID_HERE":
             st.warning("⚠️ Google OAuth credentials not set in code.")

@@ -37,13 +37,10 @@ st.markdown("""
         justify-content: center;
         width: 100%;
     }
-    /* --- FIX FOR GOOGLE BUTTON CENTERING --- */
-    .stHtml, .stHtml > div {
-        display: flex !important;
-        justify-content: center !important;
-        width: 100%;
+    .google-button {
+        display: flex;
+        justify-content: center;
     }
-    /* ------------------------------------- */
     h3, h4 {
         font-weight: bold;
         text-align: center;
@@ -98,21 +95,21 @@ def sign_up(email: str, password: str):
     return resp.get('idToken'), None
 
 
-def sign_in_with_google(id_token: str):
-    apikey = 'AIzaSyAqvXwzaDvA3F3xkhHzbAGWmswYu5NDAds'
-    payload = {
-        'postBody': f'id_token={id_token}&providerId=google.com',
-        'requestUri': 'http://localhost:8501',
-        'returnSecureToken': True
-    }
-    r = requests.post(
-        f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={apikey}',
-        json=payload
-    )
-    resp = r.json()
-    if 'error' in resp:
-        return None, resp['error']['message']
-    return resp.get('idToken'), None
+# def sign_in_with_google(id_token: str):
+#     apikey = 'AIzaSyAqvXwzaDvA3F3xkhHzbAGWmswYu5NDAds'
+#     payload = {
+#         'postBody': f'id_token={id_token}&providerId=google.com',
+#         'requestUri': 'http://localhost:8501',
+#         'returnSecureToken': True
+#     }
+#     r = requests.post(
+#         f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={apikey}',
+#         json=payload
+#     )
+#     resp = r.json()
+#     if 'error' in resp:
+#         return None, resp['error']['message']
+#     return resp.get('idToken'), None
 
 
 # ========== HABITABILITY CALCULATION ==========
@@ -239,47 +236,47 @@ if st.session_state.token is None:
         # NOTE: You must create OAuth credentials in Google Cloud Console
         # and replace the placeholders below.
 
-        CLIENT_ID = st.secrets.get("GOOGLE_CLIENT_ID", os.environ.get("GOOGLE_CLIENT_ID"))
-        CLIENT_SECRET = st.secrets.get("GOOGLE_CLIENT_SECRET", os.environ.get("GOOGLE_CLIENT_SECRET"))
-        REDIRECT_URI = "https://bunting.streamlit.app/"
-
-        if CLIENT_ID == "YOUR_GOOGLE_CLIENT_ID_HERE":
-            st.warning("⚠️ Google OAuth credentials not set in code.")
-        else:
-            try:
-                # OAuth endpoints for Google
-                oauth2 = OAuth2Component(
-                    CLIENT_ID,
-                    CLIENT_SECRET,
-                    "https://accounts.google.com/o/oauth2/v2/auth",
-                    "https://oauth2.googleapis.com/token",
-                    "https://oauth2.googleapis.com/token",
-                    "https://oauth2.googleapis.com/revoke"
-                )
-
-                # Render the Authorization Button
-                result = oauth2.authorize_button(
-                    name="Sign in with Google",
-                    icon="https://www.google.com.tw/favicon.ico",
-                    redirect_uri=REDIRECT_URI,
-                    scope="openid email profile",
-                    key="google_oauth",
-                    extras_params={"prompt": "consent", "access_type": "offline"}
-                )
-
-                if result and 'token' in result:
-                    id_token = result.get('token', {}).get('id_token')
-                    if id_token:
-                        with st.spinner("Authenticating with Firebase..."):
-                            token, err = sign_in_with_google(id_token)
-                            if err:
-                                st.error(f"Firebase Auth Failed: {err}")
-                            else:
-                                st.session_state.token = token
-                                st.session_state.page = 'exo_search'
-                                st.rerun()
-            except Exception as e:
-                st.error(f"OAuth Error: {e}")
+        # CLIENT_ID = st.secrets.get("GOOGLE_CLIENT_ID", os.environ.get("GOOGLE_CLIENT_ID"))
+        # CLIENT_SECRET = st.secrets.get("GOOGLE_CLIENT_SECRET", os.environ.get("GOOGLE_CLIENT_SECRET"))
+        # REDIRECT_URI = "http://localhost:8501"
+        #
+        # if CLIENT_ID == "YOUR_GOOGLE_CLIENT_ID_HERE":
+        #     st.warning("⚠️ Google OAuth credentials not set in code.")
+        # else:
+        #     try:
+        #         # OAuth endpoints for Google
+        #         oauth2 = OAuth2Component(
+        #             CLIENT_ID,
+        #             CLIENT_SECRET,
+        #             "https://accounts.google.com/o/oauth2/v2/auth",
+        #             "https://oauth2.googleapis.com/token",
+        #             "https://oauth2.googleapis.com/token",
+        #             "https://oauth2.googleapis.com/revoke"
+        #         )
+        #
+        #         # Render the Authorization Button
+        #         result = oauth2.authorize_button(
+        #             name="Sign in with Google",
+        #             icon="https://www.google.com.tw/favicon.ico",
+        #             redirect_uri=REDIRECT_URI,
+        #             scope="openid email profile",
+        #             key="google_oauth",
+        #             extras_params={"prompt": "consent", "access_type": "offline"}
+        #         )
+        #
+        #         if result and 'token' in result:
+        #             id_token = result.get('token', {}).get('id_token')
+        #             if id_token:
+        #                 with st.spinner("Authenticating with Firebase..."):
+        #                     token, err = sign_in_with_google(id_token)
+        #                     if err:
+        #                         st.error(f"Firebase Auth Failed: {err}")
+        #                     else:
+        #                         st.session_state.token = token
+        #                         st.session_state.page = 'exo_search'
+        #                         st.rerun()
+        #     except Exception as e:
+        #         st.error(f"OAuth Error: {e}")
 
     st.markdown('</div>', unsafe_allow_html=True)
 

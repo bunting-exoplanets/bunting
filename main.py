@@ -5,11 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.constants import R_earth, R_sun, G, M_sun
 import astropy.units as u
-# from p_winds import tools, parker, hydrogen, helium, transit, lines
-# from scipy.integrate import trapz
-# from scipy.integrate.simpson import simpson as simps
-
-
+import os
+from streamlit_oauth import OAuth2Component
 
 # ========== PAGE CONFIG & STYLING ==========
 st.set_page_config(page_title="Bunting — Exoplanet Detection", page_icon="🔭", layout="wide")
@@ -102,7 +99,7 @@ def sign_in_with_google(id_token: str):
     apikey = 'AIzaSyAqvXwzaDvA3F3xkhHzbAGWmswYu5NDAds'
     payload = {
         'postBody': f'id_token={id_token}&providerId=google.com',
-        'requestUri': 'http://localhost',
+        'requestUri': 'http://localhost:8501',
         'returnSecureToken': True
     }
     r = requests.post(
@@ -235,19 +232,51 @@ if st.session_state.token is None:
         # Separator
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        # Google sign-in button
-        if st.button("**Sign in with Google**", key="google_signin"):
-            google_id_token = None  # TODO: integrate client-side OAuth to obtain this
-            if not google_id_token:
-                st.warning("Google OAuth not configured yet.")
-            else:
-                token, err = sign_in_with_google(google_id_token)
-                if err:
-                    st.error(err)
-                else:
-                    st.session_state.token = token
-                    st.session_state.page = 'exo_search'
-                    st.rerun()
+        # ========== GOOGLE SSO INTEGRATION ==========
+        # NOTE: You must create OAuth credentials in Google Cloud Console
+        # and replace the placeholders below.
+
+        CLIENT_ID = st.secrets.get("GOOGLE_CLIENT_ID", os.environ.get("GOOGLE_CLIENT_ID"))
+        CLIENT_SECRET = st.secrets.get("GOOGLE_CLIENT_SECRET", os.environ.get("GOOGLE_CLIENT_SECRET"))
+        REDIRECT_URI = "http://localhost:8501"
+
+        if CLIENT_ID == "YOUR_GOOGLE_CLIENT_ID_HERE":
+            st.warning("⚠️ Google OAuth credentials not set in code.")
+        else:
+            try:
+                # OAuth endpoints for Google
+                oauth2 = OAuth2Component(
+                    CLIENT_ID,
+                    CLIENT_SECRET,
+                    "https://accounts.google.com/o/oauth2/v2/auth",
+                    "https://oauth2.googleapis.com/token",
+                    "https://oauth2.googleapis.com/token",
+                    "https://oauth2.googleapis.com/revoke"
+                )
+
+                # Render the Authorization Button
+                result = oauth2.authorize_button(
+                    name="Sign in with Google",
+                    icon="https://www.google.com.tw/favicon.ico",
+                    redirect_uri=REDIRECT_URI,
+                    scope="openid email profile",
+                    key="google_oauth",
+                    extras_params={"prompt": "consent", "access_type": "offline"}
+                )
+
+                if result and 'token' in result:
+                    id_token = result.get('token', {}).get('id_token')
+                    if id_token:
+                        with st.spinner("Authenticating with Firebase..."):
+                            token, err = sign_in_with_google(id_token)
+                            if err:
+                                st.error(f"Firebase Auth Failed: {err}")
+                            else:
+                                st.session_state.token = token
+                                st.session_state.page = 'exo_search'
+                                st.rerun()
+            except Exception as e:
+                st.error(f"OAuth Error: {e}")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -715,17 +744,12 @@ else:
                     else:
                         st.write("No dominant gases identified. The atmosphere may be thin or non-existent.")
 
-
-
-
-
                     st.subheader("Atmospheric Escape Analysis")
 
                     try:
                         R_planet = out['radius_earth'] * R_earth.value  # Planet radius in meters
                         M_planet = out['radius_earth'] ** 3 * 5.972e24  # Estimate mass (Earth-like density)
                         T_planet = out['equilibrium_temp']  # Planet temperature in K
-
 
                         dominant_gas = gases[np.argmax(likelihoods)]
                         mu_dict = {
